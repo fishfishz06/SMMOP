@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>莫爾圓與應力轉換互動分析器 (Mohr's Circle & Stress Elements)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #0b1329;
+            color: #f1f5f9;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        canvas {
+            touch-action: none;
+            user-select: none;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900/90 border-b border-slate-800/80 px-6 py-3.5 sticky top-0 z-40 backdrop-blur-md shadow-xl">
+        <div class="max-w-[1600px] mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-gradient-to-tr from-indigo-600 to-sky-500 rounded-xl text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
+                    <i class="fa-solid fa-circle-notch text-xl animate-spin-slow"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-100 to-sky-300 bg-clip-text text-transparent flex items-center gap-2">
+                        莫爾圓與微小應力元素互動分析儀
+                    </h1>
+                    <p class="text-xs text-slate-400">Mohr's Circle & Multi-Element Stress Transformation Visualizer</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center space-x-2 text-xs bg-slate-950/80 px-3.5 py-1.5 rounded-lg border border-slate-800/80">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-slate-300 font-medium">慣用符號：拉應力向右 (+) | 逆時針剪應力向上 (+)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Inputs & Controls (4 cols) -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <!-- Inputs Box -->
+            <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-5 shadow-2xl backdrop-blur-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-4 flex items-center justify-between">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-sliders"></i> 應力與旋轉角度輸入</span>
+                    <span class="text-[10px] text-slate-500 font-normal">單位：MPa / deg</span>
+                </h2>
+
+                <div class="space-y-4 text-xs">
+                    <!-- σx -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium text-slate-300 flex items-center gap-1.5" for="input-sx">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+                                正向應力 &sigma;<sub>x</sub>
+                            </label>
+                            <span id="val-sx" class="mono text-rose-400 font-semibold">100.0</span>
+                        </div>
+                        <input type="range" id="slider-sx" min="-1000" max="1000" step="5" value="100" class="w-full accent-rose-500 cursor-pointer">
+                        <input type="number" id="input-sx" value="100" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-white mono focus:outline-none focus:border-rose-500">
+                    </div>
+
+                    <!-- σy -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium text-slate-300 flex items-center gap-1.5" for="input-sy">
+                                <span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span>
+                                正向應力 &sigma;<sub>y</sub>
+                            </label>
+                            <span id="val-sy" class="mono text-sky-400 font-semibold">-500.0</span>
+                        </div>
+                        <input type="range" id="slider-sy" min="-1000" max="1000" step="5" value="-500" class="w-full accent-sky-500 cursor-pointer">
+                        <input type="number" id="input-sy" value="-500" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-white mono focus:outline-none focus:border-sky-500">
+                    </div>
+
+                    <!-- τxy -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium text-slate-300 flex items-center gap-1.5" for="input-txy">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+                                剪應力 &tau;<sub>xy</sub>
+                            </label>
+                            <span id="val-txy" class="mono text-amber-400 font-semibold">-400.0</span>
+                        </div>
+                        <input type="range" id="slider-txy" min="-1000" max="1000" step="5" value="-400" class="w-full accent-amber-500 cursor-pointer">
+                        <input type="number" id="input-txy" value="-400" class="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-white mono focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <hr class="border-slate-800 my-3">
+
+                    <!-- Arbitrary Angle θ -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="font-medium text-purple-300 flex items-center gap-1.5" for="input-theta">
+                                <i class="fa-solid fa-rotate"></i> 旋轉角 &theta; (度 deg)
+                            </label>
+                            <span id="val-theta" class="mono text-purple-400 font-semibold">30.0°</span>
+                        </div>
+                        <input type="range" id="slider-theta" min="-180" max="180" step="0.5" value="30" class="w-full accent-purple-500 cursor-pointer">
+                        <div class="flex gap-2 mt-1">
+                            <input type="number" id="input-theta" value="30" step="0.5" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-white mono focus:outline-none focus:border-purple-500">
+                            <button id="btn-reset-theta" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors">歸零</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 shadow-xl">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">快速範例預設 (Presets)</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button id="preset-1" class="p-2.5 bg-slate-950 hover:bg-indigo-900/40 hover:border-indigo-500/60 border border-slate-800 rounded-xl text-left transition-all">
+                        <div class="font-semibold text-slate-200">典型綜合剪拉</div>
+                        <div class="text-slate-500 text-[10px] mono mt-0.5">100, -500, -400</div>
+                    </button>
+                    <button id="preset-2" class="p-2.5 bg-slate-950 hover:bg-indigo-900/40 hover:border-indigo-500/60 border border-slate-800 rounded-xl text-left transition-all">
+                        <div class="font-semibold text-slate-200">純剪切 (Pure Shear)</div>
+                        <div class="text-slate-500 text-[10px] mono mt-0.5">0, 0, 350</div>
+                    </button>
+                    <button id="preset-3" class="p-2.5 bg-slate-950 hover:bg-indigo-900/40 hover:border-indigo-500/60 border border-slate-800 rounded-xl text-left transition-all">
+                        <div class="font-semibold text-slate-200">單軸應力 (Uniaxial)</div>
+                        <div class="text-slate-500 text-[10px] mono mt-0.5">400, 0, 0</div>
+                    </button>
+                    <button id="preset-4" class="p-2.5 bg-slate-950 hover:bg-indigo-900/40 hover:border-indigo-500/60 border border-slate-800 rounded-xl text-left transition-all">
+                        <div class="font-semibold text-slate-200">雙軸同向張力</div>
+                        <div class="text-slate-500 text-[10px] mono mt-0.5">500, 200, 150</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calculated Metrics Cards -->
+            <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 shadow-xl space-y-3 text-xs">
+                <h3 class="font-semibold text-slate-300 uppercase tracking-wider text-[11px] flex items-center justify-between">
+                    <span>莫爾圓幾何參數摘要</span>
+                    <i class="fa-solid fa-calculator text-indigo-400"></i>
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <div class="text-[10px] text-slate-400">圓心 &sigma;<sub>avg</sub></div>
+                        <div id="res-savg" class="mono font-bold text-emerald-400 text-sm mt-0.5">-200.0 MPa</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <div class="text-[10px] text-slate-400">莫爾圓半徑 R (&tau;<sub>max</sub>)</div>
+                        <div id="res-radius" class="mono font-bold text-indigo-400 text-sm mt-0.5">500.0 MPa</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <div class="text-[10px] text-slate-400">主應力面角 &theta;<sub>p</sub></div>
+                        <div id="res-thetap" class="mono font-bold text-teal-400 text-sm mt-0.5">-26.57°</div>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                        <div class="text-[10px] text-slate-400">主應力面角 &theta;<sub>p2</sub></div>
+                        <div id="res-thetap2" class="mono font-bold text-teal-300 text-sm mt-0.5">63.43°</div>
+                    </div>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <div class="text-[10px] text-slate-400">最大/最小主應力 (&sigma;<sub>1</sub>, &sigma;<sub>2</sub>)</div>
+                        <div id="res-principals" class="mono font-bold text-white text-sm mt-0.5">300.0 / -700.0 MPa</div>
+                    </div>
+                    <i class="fa-solid fa-arrows-left-right text-emerald-400 text-base"></i>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Mohr Circle Canvas & 3 Stress Elements (8 cols) -->
+        <div class="lg:col-span-8 space-y-6 flex flex-col">
+
+            <!-- Mohr Circle Graphic Block -->
+            <div class="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 shadow-2xl flex flex-col min-h-[460px] relative">
+                <div class="flex flex-wrap justify-between items-center mb-2 px-1 gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-indigo-400"></i>
+                            莫爾圓平面圖 (含極點 O.P.、&theta;p 角與全座標點標籤)
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 text-xs">
+                        <button id="btn-zoom-in" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                        <button id="btn-zoom-out" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        <button id="btn-reset-view" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-colors">重置視角</button>
+                    </div>
+                </div>
+
+                <!-- Canvas -->
+                <div class="flex-1 w-full h-full relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
+                    <canvas id="mohrCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+                    <div class="absolute bottom-2 right-2 text-[10px] text-slate-500 bg-slate-900/80 px-2 py-1 rounded border border-slate-800 backdrop-blur pointer-events-none">
+                        拖拽平移 | 滾輪縮放
+                    </div>
+                </div>
+
+                <!-- Canvas Legend Footer -->
+                <div class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] pt-2 border-t border-slate-800/80">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+                        <span class="text-slate-300">給定面 $X$ 點</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span>
+                        <span class="text-slate-300">正交面 $Y$ 點</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+                        <span class="text-slate-300">極點 $O.P.$</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block"></span>
+                        <span class="text-slate-300">轉換點 $X', Y'$</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+                        <span class="text-slate-300">主應力面 $\sigma_1, \sigma_2$</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 Physical Stress Elements Visualization Block -->
+            <div class="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 shadow-2xl space-y-3">
+                <div class="flex flex-wrap justify-between items-center px-1 border-b border-slate-800/80 pb-2.5">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-cubes text-amber-400 text-sm"></i>
+                        微小應力元素 (Physical Stress Elements)
+                    </h3>
+                    <div class="text-[11px] text-slate-400">
+                        包含：原始元素、旋轉 $\theta$ 轉換元素、主應力元素 ($\theta_p$)
+                    </div>
+                </div>
+
+                <!-- 3 Elements Display Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <!-- Element 1: Original Element -->
+                    <div class="bg-slate-950 border border-slate-800/90 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-semibold text-rose-400 flex items-center gap-1">
+                                <i class="fa-solid fa-square-full text-[10px]"></i> 1. 原始應力元素
+                            </span>
+                            <span class="text-[10px] mono text-slate-400">&theta; = 0°</span>
+                        </div>
+                        <div class="w-full h-[180px] relative">
+                            <canvas id="elemCanvasOrig" class="w-full h-full block"></canvas>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mono border-t border-slate-800/80 pt-1.5 space-y-0.5">
+                            <div>&sigma;<sub>x</sub> = <span id="e1-sx" class="text-rose-400 font-semibold">100.0</span> MPa</div>
+                            <div>&sigma;<sub>y</sub> = <span id="e1-sy" class="text-sky-400 font-semibold">-500.0</span> MPa</div>
+                            <div>&tau;<sub>xy</sub> = <span id="e1-txy" class="text-amber-400 font-semibold">-400.0</span> MPa</div>
+                        </div>
+                    </div>
+
+                    <!-- Element 2: Rotated Element by θ -->
+                    <div class="bg-slate-950 border border-purple-900/50 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-semibold text-purple-400 flex items-center gap-1">
+                                <i class="fa-solid fa-rotate text-[10px]"></i> 2. 旋轉 &theta; 應力元素
+                            </span>
+                            <span id="e2-theta-tag" class="text-[10px] mono text-purple-300 font-semibold">&theta; = 30.0°</span>
+                        </div>
+                        <div class="w-full h-[180px] relative">
+                            <canvas id="elemCanvasRot" class="w-full h-full block"></canvas>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mono border-t border-slate-800/80 pt-1.5 space-y-0.5">
+                            <div>&sigma;<sub>x'</sub> = <span id="e2-sx" class="text-purple-300 font-semibold">196.4</span> MPa</div>
+                            <div>&sigma;<sub>y'</sub> = <span id="e2-sy" class="text-pink-300 font-semibold">-596.4</span> MPa</div>
+                            <div>&tau;<sub>x'y'</sub> = <span id="e2-txy" class="text-amber-300 font-semibold">-459.8</span> MPa</div>
+                        </div>
+                    </div>
+
+                    <!-- Element 3: Principal Stress Element by θp -->
+                    <div class="bg-slate-950 border border-emerald-900/50 rounded-xl p-3 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                                <i class="fa-solid fa-compass text-[10px]"></i> 3. 主應力元素 (&theta;p)
+                            </span>
+                            <span id="e3-thetap-tag" class="text-[10px] mono text-emerald-300 font-semibold">&theta;p = -26.6°</span>
+                        </div>
+                        <div class="w-full h-[180px] relative">
+                            <canvas id="elemCanvasPrincipal" class="w-full h-full block"></canvas>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mono border-t border-slate-800/80 pt-1.5 space-y-0.5">
+                            <div>&sigma;<sub>1</sub> = <span id="e3-s1" class="text-emerald-400 font-semibold">300.0</span> MPa</div>
+                            <div>&sigma;<sub>2</sub> = <span id="e3-s2" class="text-teal-400 font-semibold">-700.0</span> MPa</div>
+                            <div>&tau;<sub>max</sub> = <span class="text-slate-500 font-semibold">0.0</span> MPa (主平面無剪力)</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800/80 py-3.5 text-center text-xs text-slate-500">
+        <div class="max-w-[1600px] mx-auto px-4 flex justify-between items-center flex-wrap gap-2">
+            <div>莫爾圓與材料力學應力轉換分析工具 &copy; 2026</div>
+            <div class="text-[11px] text-slate-600">拉應力 (+) | 壓應力 (-) | 逆時針剪力 (+)</div>
+        </div>
+    </footer>
+
+    <script>
+        // Core State
+        const state = {
+            sx: 100,
+            sy: -500,
+            txy: -400,
+            theta: 30, // deg
+
+            // View transform
+            scale: 0.75,
+            panX: 0,
+            panY: 0,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0
+        };
+
+        // DOM Inputs
+        const sliderSx = document.getElementById('slider-sx');
+        const inputSx = document.getElementById('input-sx');
+        const valSx = document.getElementById('val-sx');
+
+        const sliderSy = document.getElementById('slider-sy');
+        const inputSy = document.getElementById('input-sy');
+        const valSy = document.getElementById('val-sy');
+
+        const sliderTxy = document.getElementById('slider-txy');
+        const inputTxy = document.getElementById('input-txy');
+        const valTxy = document.getElementById('val-txy');
+
+        const sliderTheta = document.getElementById('slider-theta');
+        const inputTheta = document.getElementById('input-theta');
+        const valTheta = document.getElementById('val-theta');
+
+        // Canvases
+        const mohrCanvas = document.getElementById('mohrCanvas');
+        const mCtx = mohrCanvas.getContext('2d');
+
+        const cOrig = document.getElementById('elemCanvasOrig');
+        const ctxOrig = cOrig.getContext('2d');
+
+        const cRot = document.getElementById('elemCanvasRot');
+        const ctxRot = cRot.getContext('2d');
+
+        const cPrin = document.getElementById('elemCanvasPrincipal');
+        const ctxPrin = cPrin.getContext('2d');
+
+        // Math Core
+        function calculateMohr() {
+            const sx = state.sx;
+            const sy = state.sy;
+            const txy = state.txy;
+            const thetaRad = (state.theta * Math.PI) / 180;
+
+            const savg = (sx + sy) / 2;
+            const R = Math.sqrt(Math.pow((sx - sy) / 2, 2) + Math.pow(txy, 2));
+
+            const s1 = savg + R;
+            const s2 = savg - R;
+
+            // Principal angle 2*theta_p = atan2(2*txy, sx - sy)
+            const twoThetaPRad = Math.atan2(2 * txy, sx - sy);
+            const thetaPRad = twoThetaPRad / 2;
+            const thetaPDeg = (thetaPRad * 180) / Math.PI;
+            const thetaP2Deg = thetaPDeg + 90;
+
+            // Rotated Stress by theta
+            const sxRot = savg + ((sx - sy) / 2) * Math.cos(2 * thetaRad) + txy * Math.sin(2 * thetaRad);
+            const syRot = savg - ((sx - sy) / 2) * Math.cos(2 * thetaRad) - txy * Math.sin(2 * thetaRad);
+            const txyRot = -((sx - sy) / 2) * Math.sin(2 * thetaRad) + txy * Math.cos(2 * thetaRad);
+
+            // Origin of Planes O.P.(sx, -txy)
+            const opX = sx;
+            const opY = -txy;
+
+            return {
+                savg,
+                R,
+                s1,
+                s2,
+                thetaPDeg,
+                thetaP2Deg,
+                thetaPRad,
+                twoThetaPRad,
+                sxRot,
+                syRot,
+                txyRot,
+                opX,
+                opY
+            };
+        }
+
+        // Update Text Summary
+        function updateSummary() {
+            const m = calculateMohr();
+
+            document.getElementById('res-savg').textContent = m.savg.toFixed(1) + ' MPa';
+            document.getElementById('res-radius').textContent = m.R.toFixed(1) + ' MPa';
+            document.getElementById('res-thetap').textContent = m.thetaPDeg.toFixed(2) + '°';
+            document.getElementById('res-thetap2').textContent = m.thetaP2Deg.toFixed(2) + '°';
+            document.getElementById('res-principals').textContent = `${m.s1.toFixed(1)} / ${m.s2.toFixed(1)} MPa`;
+
+            // Card 1
+            document.getElementById('e1-sx').textContent = state.sx.toFixed(1);
+            document.getElementById('e1-sy').textContent = state.sy.toFixed(1);
+            document.getElementById('e1-txy').textContent = state.txy.toFixed(1);
+
+            // Card 2
+            document.getElementById('e2-theta-tag').textContent = `θ = ${state.theta.toFixed(1)}°`;
+            document.getElementById('e2-sx').textContent = m.sxRot.toFixed(1);
+            document.getElementById('e2-sy').textContent = m.syRot.toFixed(1);
+            document.getElementById('e2-txy').textContent = m.txyRot.toFixed(1);
+
+            // Card 3
+            document.getElementById('e3-thetap-tag').textContent = `θp = ${m.thetaPDeg.toFixed(1)}°`;
+            document.getElementById('e3-s1').textContent = m.s1.toFixed(1);
+            document.getElementById('e3-s2').textContent = m.s2.toFixed(1);
+        }
+
+        // Render Mohr Circle Canvas
+        function drawMohrCircle() {
+            if (!mohrCanvas.clientWidth || !mohrCanvas.clientHeight) return;
+
+            const dpr = window.devicePixelRatio || 1;
+            const w = mohrCanvas.clientWidth;
+            const h = mohrCanvas.clientHeight;
+
+            if (mohrCanvas.width !== w * dpr || mohrCanvas.height !== h * dpr) {
+                mohrCanvas.width = w * dpr;
+                mohrCanvas.height = h * dpr;
+            }
+
+            mCtx.save();
+            mCtx.scale(dpr, dpr);
+            mCtx.clearRect(0, 0, w, h);
+
+            const m = calculateMohr();
+
+            const cx = w / 2 + state.panX;
+            const cy = h / 2 + state.panY;
+
+            // Canvas conversions: Sigma right(+), Tau UP(+) -> Screen Y = cy - tau*scale
+            const toX = (sigma) => cx + sigma * state.scale;
+            const toY = (tau) => cy - tau * state.scale;
+
+            // 1. Grid
+            mCtx.strokeStyle = '#1e293b';
+            mCtx.lineWidth = 1;
+            const gridStep = 50 * state.scale;
+            for (let x = (cx % gridStep) - gridStep; x < w; x += gridStep) {
+                mCtx.beginPath(); mCtx.moveTo(x, 0); mCtx.lineTo(x, h); mCtx.stroke();
+            }
+            for (let y = (cy % gridStep) - gridStep; y < h; y += gridStep) {
+                mCtx.beginPath(); mCtx.moveTo(0, y); mCtx.lineTo(w, y); mCtx.stroke();
+            }
+
+            // 2. Axes
+            mCtx.strokeStyle = '#64748b';
+            mCtx.lineWidth = 1.5;
+            // Sigma axis
+            mCtx.beginPath(); mCtx.moveTo(0, cy); mCtx.lineTo(w, cy); mCtx.stroke();
+            // Tau axis
+            mCtx.beginPath(); mCtx.moveTo(cx, 0); mCtx.lineTo(cx, h); mCtx.stroke();
+
+            // Axis Arrow & Labels
+            mCtx.fillStyle = '#94a3b8';
+            mCtx.font = '11px sans-serif';
+            mCtx.fillText('σ (拉應力 +, MPa)', w - 120, cy + 18);
+            mCtx.fillText('τ (逆時針剪應力 +, MPa)', cx + 10, 18);
+
+            // 3. Mohr Circle
+            const cX = toX(m.savg);
+            const cY = toY(0);
+            const rPx = m.R * state.scale;
+
+            mCtx.strokeStyle = '#6366f1';
+            mCtx.lineWidth = 2.5;
+            mCtx.beginPath();
+            mCtx.arc(cX, cY, rPx, 0, 2 * Math.PI);
+            mCtx.stroke();
+
+            // Circle Fill
+            const grad = mCtx.createRadialGradient(cX, cY, 0, cX, cY, rPx);
+            grad.addColorStop(0, 'rgba(99, 102, 241, 0.12)');
+            grad.addColorStop(1, 'rgba(99, 102, 241, 0.02)');
+            mCtx.fillStyle = grad;
+            mCtx.fill();
+
+            // Center Point C
+            mCtx.fillStyle = '#818cf8';
+            mCtx.beginPath(); mCtx.arc(cX, cY, 4, 0, 2 * Math.PI); mCtx.fill();
+            drawCanvasLabel(mCtx, `C(${m.savg.toFixed(0)}, 0)`, cX - 25, cY + 18, '#818cf8');
+
+            // 4. Points X and Y
+            const xPx = toX(state.sx);
+            const xPy = toY(state.txy);
+
+            const yPx = toX(state.sy);
+            const yPy = toY(-state.txy);
+
+            // Diameter X-Y
+            mCtx.strokeStyle = '#f43f5e';
+            mCtx.lineWidth = 2;
+            mCtx.beginPath(); mCtx.moveTo(xPx, xPy); mCtx.lineTo(yPx, yPy); mCtx.stroke();
+
+            // Point X
+            mCtx.fillStyle = '#f43f5e';
+            mCtx.beginPath(); mCtx.arc(xPx, xPy, 6, 0, 2 * Math.PI); mCtx.fill();
+            drawCanvasLabel(mCtx, `X(${state.sx}, ${state.txy})`, xPx + 10, xPy + (state.txy < 0 ? 15 : -10), '#f43f5e', true);
+
+            // Point Y
+            mCtx.fillStyle = '#38bdf8';
+            mCtx.beginPath(); mCtx.arc(yPx, yPy, 6, 0, 2 * Math.PI); mCtx.fill();
+            drawCanvasLabel(mCtx, `Y(${state.sy}, ${-state.txy})`, yPx - 90, yPy + (-state.txy < 0 ? 15 : -10), '#38bdf8', true);
+
+            // 5. Origin of Planes O.P.
+            const opPx = toX(m.opX);
+            const opPy = toY(m.opY);
+
+            mCtx.setLineDash([4, 4]);
+            mCtx.strokeStyle = '#fbbf24';
+            mCtx.lineWidth = 1.5;
+            mCtx.beginPath(); mCtx.moveTo(xPx, xPy); mCtx.lineTo(opPx, opPy); mCtx.stroke();
+            mCtx.beginPath(); mCtx.moveTo(yPx, yPy); mCtx.lineTo(opPx, opPy); mCtx.stroke();
+            mCtx.setLineDash([]);
+
+            // O.P. Diamond
+            mCtx.fillStyle = '#fbbf24';
+            mCtx.beginPath();
+            mCtx.moveTo(opPx, opPy - 7); mCtx.lineTo(opPx + 7, opPy);
+            mCtx.lineTo(opPx, opPy + 7); mCtx.lineTo(opPx - 7, opPy);
+            mCtx.closePath(); mCtx.fill();
+            drawCanvasLabel(mCtx, `O.P.(${m.opX}, ${m.opY})`, opPx + 10, opPy - 8, '#fbbf24', true);
+
+            // 6. Principal Stresses & 2θp Arc
+            const s1Px = toX(m.s1);
+            const s2Px = toX(m.s2);
+
+            mCtx.fillStyle = '#22c55e';
+            mCtx.beginPath(); mCtx.arc(s1Px, cY, 5, 0, 2 * Math.PI); mCtx.fill();
+            drawCanvasLabel(mCtx, `σ1(${m.s1.toFixed(1)})`, s1Px + 6, cY - 10, '#22c55e', true);
+
+            mCtx.fillStyle = '#10b981';
+            mCtx.beginPath(); mCtx.arc(s2Px, cY, 5, 0, 2 * Math.PI); mCtx.fill();
+            drawCanvasLabel(mCtx, `σ2(${m.s2.toFixed(1)})`, s2Px - 65, cY - 10, '#10b981', true);
+
+            // Arc for 2θp at C
+            const angleCX = Math.atan2(-(xPy - cY), xPx - cX);
+            const arcR = Math.min(40, rPx * 0.45);
+
+            mCtx.strokeStyle = '#14b8a6';
+            mCtx.lineWidth = 2;
+            mCtx.beginPath();
+            mCtx.arc(cX, cY, arcR, -angleCX, 0, angleCX < 0);
+            mCtx.stroke();
+            const midAngleP = -angleCX / 2;
+            drawCanvasLabel(mCtx, `2θp=${(m.thetaPDeg * 2).toFixed(1)}°`, cX + (arcR + 15) * Math.cos(midAngleP) - 20, cY + (arcR + 15) * Math.sin(midAngleP), '#14b8a6');
+
+            // 7. Rotated Points X', Y' and 2θ Arc
+            if (Math.abs(state.theta) > 0.01) {
+                const xrPx = toX(m.sxRot);
+                const xrPy = toY(m.txyRot);
+
+                const yrPx = toX(m.syRot);
+                const yrPy = toY(-m.txyRot);
+
+                mCtx.setLineDash([3, 3]);
+                mCtx.strokeStyle = '#c084fc';
+                mCtx.lineWidth = 2;
+                mCtx.beginPath(); mCtx.moveTo(xrPx, xrPy); mCtx.lineTo(yrPx, yrPy); mCtx.stroke();
+                mCtx.setLineDash([]);
+
+                // Point X'
+                mCtx.fillStyle = '#c084fc';
+                mCtx.beginPath(); mCtx.arc(xrPx, xrPy, 5.5, 0, 2 * Math.PI); mCtx.fill();
+                drawCanvasLabel(mCtx, `X'(${m.sxRot.toFixed(1)}, ${m.txyRot.toFixed(1)})`, xrPx + 10, xrPy + (m.txyRot < 0 ? 15 : -10), '#c084fc', true);
+
+                // Point Y'
+                mCtx.fillStyle = '#f472b6';
+                mCtx.beginPath(); mCtx.arc(yrPx, yrPy, 5.5, 0, 2 * Math.PI); mCtx.fill();
+                drawCanvasLabel(mCtx, `Y'(${m.syRot.toFixed(1)}, ${(-m.txyRot).toFixed(1)})`, yrPx - 85, yrPy + (-m.txyRot < 0 ? 15 : -10), '#f472b6', true);
+
+                // Arc for 2θ
+                const angleXR = Math.atan2(-(xrPy - cY), xrPx - cX);
+                const rotArcR = Math.min(60, rPx * 0.65);
+
+                mCtx.strokeStyle = '#a855f7';
+                mCtx.lineWidth = 2;
+                mCtx.beginPath();
+                mCtx.arc(cX, cY, rotArcR, -angleCX, -angleXR, state.theta > 0);
+                mCtx.stroke();
+
+                const midAngleRot = (-angleCX - angleXR) / 2;
+                drawCanvasLabel(mCtx, `2θ=${(state.theta * 2).toFixed(1)}°`, cX + (rotArcR + 15) * Math.cos(midAngleRot) - 15, cY + (rotArcR + 15) * Math.sin(midAngleRot), '#a855f7');
+            }
+
+            mCtx.restore();
+        }
+
+        // Label helper with background card
+        function drawCanvasLabel(ctx, text, x, y, color = '#ffffff', isBold = false) {
+            ctx.save();
+            ctx.font = `${isBold ? 'bold ' : ''}10px 'JetBrains Mono', monospace`;
+            const w = ctx.measureText(text).width;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+            ctx.fillRect(x - 3, y - 11, w + 6, 14);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 0.8;
+            ctx.strokeRect(x - 3, y - 11, w + 6, 14);
+
+            ctx.fillStyle = color;
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        // Generic Physical Stress Element Renderer
+        function drawSingleElement(canvas, ctx, rotDeg, sx, sy, txy, titleText, isPrincipal = false) {
+            if (!canvas.clientWidth || !canvas.clientHeight) return;
+
+            const dpr = window.devicePixelRatio || 1;
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+
+            if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+                canvas.width = w * dpr;
+                canvas.height = h * dpr;
+            }
+
+            ctx.save();
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, w, h);
+
+            const cx = w / 2;
+            const cy = h / 2;
+            const elemSize = 54;
+
+            // Background Reference Cross Grid
+            ctx.strokeStyle = '#1e293b';
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath(); ctx.moveTo(cx - 60, cy); ctx.lineTo(cx + 60, cy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy - 60); ctx.lineTo(cx, cy + 60); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Rotation Angle Arc on Reference Axis
+            if (Math.abs(rotDeg) > 0.1) {
+                ctx.strokeStyle = '#a855f7';
+                ctx.lineWidth = 1.5;
+                const rotRadCanvas = (-rotDeg * Math.PI) / 180;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 38, 0, rotRadCanvas, rotDeg < 0);
+                ctx.stroke();
+
+                ctx.fillStyle = '#c084fc';
+                ctx.font = '9px monospace';
+                ctx.fillText(`${rotDeg.toFixed(1)}°`, cx + 42 * Math.cos(rotRadCanvas / 2), cy + 42 * Math.sin(rotRadCanvas / 2) + 3);
+            }
+
+            // Apply Rotation for Square Element Body
+            const rotRad = (-rotDeg * Math.PI) / 180;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(rotRad);
+
+            // Element Box Body
+            ctx.fillStyle = isPrincipal ? 'rgba(6, 78, 59, 0.4)' : 'rgba(30, 41, 59, 0.85)';
+            ctx.strokeStyle = isPrincipal ? '#10b981' : (rotDeg === 0 ? '#6366f1' : '#a855f7');
+            ctx.lineWidth = 2;
+            ctx.fillRect(-elemSize / 2, -elemSize / 2, elemSize, elemSize);
+            ctx.strokeRect(-elemSize / 2, -elemSize / 2, elemSize, elemSize);
+
+            // Arrow Drawing Helpers inside rotated frame
+            const maxArrowLen = 22;
+
+            // 1. σx (Right & Left faces)
+            if (Math.abs(sx) > 0.1) {
+                const colorX = sx >= 0 ? '#f43f5e' : '#38bdf8'; // Tension red, Compression blue
+                const arrowLen = Math.min(maxArrowLen, Math.max(10, Math.abs(sx) / 25));
+                
+                // Right face (x')
+                const startXR = elemSize / 2;
+                const endXR = startXR + (sx >= 0 ? arrowLen : -arrowLen);
+                drawArrowInLocal(ctx, startXR, 0, endXR, 0, colorX);
+                drawTextInLocal(ctx, `${sx.toFixed(0)}`, endXR + (sx >= 0 ? 10 : -10), 3, colorX);
+
+                // Left face
+                const startXL = -elemSize / 2;
+                const endXL = startXL - (sx >= 0 ? arrowLen : -arrowLen);
+                drawArrowInLocal(ctx, startXL, 0, endXL, 0, colorX);
+            }
+
+            // 2. σy (Top & Bottom faces)
+            if (Math.abs(sy) > 0.1) {
+                const colorY = sy >= 0 ? '#f43f5e' : '#38bdf8';
+                const arrowLen = Math.min(maxArrowLen, Math.max(10, Math.abs(sy) / 25));
+
+                // Top face (y') -> Note in rotated canvas -Y is UP
+                const startYT = -elemSize / 2;
+                const endYT = startYT - (sy >= 0 ? arrowLen : -arrowLen);
+                drawArrowInLocal(ctx, 0, startYT, 0, endYT, colorY);
+                drawTextInLocal(ctx, `${sy.toFixed(0)}`, 0, endYT - (sy >= 0 ? 8 : -10), colorY);
+
+                // Bottom face
+                const startYB = elemSize / 2;
+                const endYB = startYB + (sy >= 0 ? arrowLen : -arrowLen);
+                drawArrowInLocal(ctx, 0, startYB, 0, endYB, colorY);
+            }
+
+            // 3. Shear Stress τxy (4 faces)
+            if (!isPrincipal && Math.abs(txy) > 0.1) {
+                const shearColor = '#f59e0b';
+                // CCW Shear (+) means UP on right face (-Y direction in screen)
+                const dir = txy > 0 ? -1 : 1; 
+
+                // Right Face Shear
+                drawArrowInLocal(ctx, elemSize / 2 + 5, -dir * 12, elemSize / 2 + 5, dir * 12, shearColor);
+                drawTextInLocal(ctx, `${txy.toFixed(0)}`, elemSize / 2 + 15, 3, shearColor);
+
+                // Left Face Shear
+                drawArrowInLocal(ctx, -elemSize / 2 - 5, dir * 12, -elemSize / 2 - 5, -dir * 12, shearColor);
+
+                // Top Face Shear
+                drawArrowInLocal(ctx, -dir * 12, -elemSize / 2 - 5, dir * 12, -elemSize / 2 - 5, shearColor);
+
+                // Bottom Face Shear
+                drawArrowInLocal(ctx, dir * 12, elemSize / 2 + 5, -dir * 12, elemSize / 2 + 5, shearColor);
+            }
+
+            ctx.restore(); // Restore rotated state
+            ctx.restore();
+        }
+
+        function drawArrowInLocal(ctx, x1, y1, x2, y2, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 1.8;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const headLen = 5;
+
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawTextInLocal(ctx, text, x, y, color) {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.font = 'bold 9px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        // Render All 3 Stress Elements
+        function drawAllElements() {
+            const m = calculateMohr();
+
+            // 1. Original Element (θ = 0)
+            drawSingleElement(cOrig, ctxOrig, 0, state.sx, state.sy, state.txy, "原始應力元素");
+
+            // 2. Rotated Element by θ
+            drawSingleElement(cRot, ctxRot, state.theta, m.sxRot, m.syRot, m.txyRot, "旋轉應力元素");
+
+            // 3. Principal Stress Element by θp
+            drawSingleElement(cPrin, ctxPrin, m.thetaPDeg, m.s1, m.s2, 0, "主應力元素", true);
+        }
+
+        // Input Binding Helper
+        function bindInput(slider, input, valDisplay, key) {
+            const update = (val) => {
+                const num = parseFloat(val);
+                if (isNaN(num)) return;
+                state[key] = num;
+                slider.value = num;
+                input.value = num;
+                valDisplay.textContent = key === 'theta' ? num.toFixed(1) + '°' : num.toFixed(1);
+
+                updateSummary();
+                drawMohrCircle();
+                drawAllElements();
+            };
+
+            slider.addEventListener('input', (e) => update(e.target.value));
+            input.addEventListener('change', (e) => update(e.target.value));
+        }
+
+        bindInput(sliderSx, inputSx, valSx, 'sx');
+        bindInput(sliderSy, inputSy, valSy, 'sy');
+        bindInput(sliderTxy, inputTxy, valTxy, 'txy');
+        bindInput(sliderTheta, inputTheta, valTheta, 'theta');
+
+        document.getElementById('btn-reset-theta').addEventListener('click', () => {
+            sliderTheta.value = 0; inputTheta.value = 0; valTheta.textContent = '0.0°';
+            state.theta = 0;
+            updateSummary();
+            drawMohrCircle();
+            drawAllElements();
+        });
+
+        // Presets
+        function setPreset(sx, sy, txy) {
+            sliderSx.value = sx; inputSx.value = sx; valSx.textContent = sx.toFixed(1); state.sx = sx;
+            sliderSy.value = sy; inputSy.value = sy; valSy.textContent = sy.toFixed(1); state.sy = sy;
+            sliderTxy.value = txy; inputTxy.value = txy; valTxy.textContent = txy.toFixed(1); state.txy = txy;
+
+            const m = calculateMohr();
+            state.scale = Math.min(mohrCanvas.clientWidth, mohrCanvas.clientHeight) / (2.8 * (m.R || 100));
+            state.panX = -m.savg * state.scale;
+            state.panY = 0;
+
+            updateSummary();
+            drawMohrCircle();
+            drawAllElements();
+        }
+
+        document.getElementById('preset-1').addEventListener('click', () => setPreset(100, -500, -400));
+        document.getElementById('preset-2').addEventListener('click', () => setPreset(0, 0, 350));
+        document.getElementById('preset-3').addEventListener('click', () => setPreset(400, 0, 0));
+        document.getElementById('preset-4').addEventListener('click', () => setPreset(500, 200, 150));
+
+        // Pan and Zoom for Mohr Canvas
+        mohrCanvas.addEventListener('mousedown', (e) => {
+            state.isDragging = true;
+            state.dragStartX = e.clientX - state.panX;
+            state.dragStartY = e.clientY - state.panY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!state.isDragging) return;
+            state.panX = e.clientX - state.dragStartX;
+            state.panY = e.clientY - state.dragStartY;
+            drawMohrCircle();
+        });
+
+        window.addEventListener('mouseup', () => { state.isDragging = false; });
+
+        mohrCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            state.scale *= zoomFactor;
+            state.scale = Math.max(0.1, Math.min(state.scale, 10));
+            drawMohrCircle();
+        }, { passive: false });
+
+        document.getElementById('btn-zoom-in').addEventListener('click', () => { state.scale *= 1.2; drawMohrCircle(); });
+        document.getElementById('btn-zoom-out').addEventListener('click', () => { state.scale *= 0.8; drawMohrCircle(); });
+        document.getElementById('btn-reset-view').addEventListener('click', () => {
+            const m = calculateMohr();
+            state.scale = Math.min(mohrCanvas.clientWidth, mohrCanvas.clientHeight) / (2.8 * (m.R || 100));
+            state.panX = -m.savg * state.scale;
+            state.panY = 0;
+            drawMohrCircle();
+        });
+
+        window.addEventListener('resize', () => {
+            drawMohrCircle();
+            drawAllElements();
+        });
+
+        // Initialize App
+        window.onload = function() {
+            setPreset(100, -500, -400);
+        };
+    </script>
+</body>
+</html>
