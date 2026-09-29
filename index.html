@@ -66,7 +66,7 @@
 
             <!-- Header Quick Links -->
             <div class="flex items-center space-x-4 text-xs font-medium text-slate-300">
-                <a href="https://github.com" target="_blank" class="hover:text-pink-400 transition-colors flex items-center gap-1.5 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-pink-900/30">
+                <a href="https://github.com/fishfishz06/SMMOP" target="_blank" class="hover:text-pink-400 transition-colors flex items-center gap-1.5 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-pink-900/30">
                     <i class="fa-brands fa-github text-sm"></i>
                     <span>GitHub 儲存庫</span>
                 </a>
@@ -79,13 +79,20 @@
 
         <!-- Hero Section -->
         <div class="text-center space-y-3 max-w-3xl mx-auto pt-4">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-medium">
-                <span class="w-2 h-2 rounded-full bg-pink-400 animate-pulse"></span>
-                互動式 Web 輔助計算分析工具
-            </div>
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
                 結構學與材料力學計算器
             </h1>
+            <!-- Subtitle Badges: Release Date & Gemini Authored -->
+            <div class="flex items-center justify-center gap-2 pt-1 font-mono">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-medium">
+                    <i class="fa-regular fa-calendar text-[11px]"></i>
+                    發布日期：2026/09/29
+                </div>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium">
+                    <i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i>
+                    Gemini 開發
+                </div>
+            </div>
         </div>
 
         <!-- Search & Category Controls -->
@@ -155,38 +162,48 @@
                 </div>
             </div>
 
-            <!-- Card 2: Section Properties & Centroid (Coming Soon Placeholder) -->
-            <div class="tool-card glass-card rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 opacity-60 hover:opacity-100" data-category="structures">
+            <!-- Card 2: Composite Section Properties & EI Transformed Calculator -->
+            <div class="tool-card glass-card rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden group" data-category="structures">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all"></div>
+
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
                         <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
                             結構學 / 幾何
                         </span>
-                        <div class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-rose-400">
-                            <i class="fa-solid fa-chart-area text-lg"></i>
+                        <div class="w-10 h-10 rounded-xl bg-slate-800/80 border border-pink-900/40 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-shapes text-lg"></i>
                         </div>
                     </div>
 
                     <div>
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            二次/高次曲線面積與形心計算器
+                        <h2 class="text-lg font-bold text-white group-hover:text-pink-300 transition-colors flex items-center gap-2">
+                            斷面計算器
                         </h2>
                         <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-                            針對二次拋物線、三次曲線（上凹與上凸）等各類高次曲線區域，快速求解面積 $A$ 與形心座標 $(\bar{x}, \bar{y})$。
+                            支援幾何多圖形動態組合與轉換斷面 ($EI$) 計算，即時求解形心 $(\bar{x}, \bar{y})$、貫性矩 $I$、等效剛度與剪力一次矩 $Q$。
                         </p>
                     </div>
 
-                    <ul class="text-[11px] text-slate-500 space-y-1.5 font-mono pt-1">
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-slate-500"></i> $y = h(x/b)^n$ 通用次數公式</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-slate-500"></i> 上凹 / 上凸（補角）區域切換</li>
+                    <!-- Updated Detailed Bullet List -->
+                    <ul class="text-[11px] text-slate-400 space-y-1.5 font-mono pt-1">
+                        <li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-pink-400 mt-0.5"></i><span><strong>多圖形組合：</strong>矩形、三角形、圓形/圓孔，支援正負挖空</span></li>
+                        <li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-pink-400 mt-0.5"></i><span><strong>EI 轉換斷面：</strong>自訂各材料 $E_i$ 與參考 $E_{ref}$</span></li>
+                        <li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-pink-400 mt-0.5"></i><span><strong>平行軸定理：</strong>即時算出 $A$, $(\bar{x}, \bar{y})$, $I_x, I_y$ 與 $EI_{eff}$</span></li>
+                        <li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-pink-400 mt-0.5"></i><span><strong>剪力一次矩 $Q(y)$：</strong>可輸入切面高度 $y_{cut}$ 求 $Q_x$</span></li>
+                        <li class="flex items-start gap-1.5"><i class="fa-solid fa-check text-pink-400 mt-0.5"></i><span><strong>Canvas 畫布：</strong>形心十字標籤、切面虛線與色彩視覺化</span></li>
                     </ul>
                 </div>
 
                 <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                    <span class="text-[11px] text-slate-500 font-medium">規劃開發中...</span>
-                    <button disabled class="cursor-not-allowed text-xs font-semibold px-4 py-2 rounded-xl bg-slate-800 text-slate-500 border border-slate-700">
-                        未上線
-                    </button>
+                    <span class="text-[11px] text-pink-400 font-semibold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-pink-400 animate-ping"></span>
+                        已上線
+                    </span>
+                    <a href="./section-properties/" class="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white shadow-lg shadow-pink-600/20 transition-all group-hover:translate-x-1">
+                        開啟計算器
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
                 </div>
             </div>
 
