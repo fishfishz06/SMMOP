@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>結構學與材料力學線上計算工具庫 | Mechanics Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900/80 border-b border-slate-800/80 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-gradient-to-tr from-indigo-600 to-sky-500 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-cubes text-lg"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+                        結構與力學計算工具箱
+                    </span>
+                    <span class="hidden sm:inline-block text-xs text-slate-400 ml-2 font-mono">v1.0</span>
+                </div>
+            </div>
+
+            <!-- Header Quick Links -->
+            <div class="flex items-center space-x-4 text-xs font-medium text-slate-300">
+                <a href="https://github.com" target="_blank" class="hover:text-indigo-400 transition-colors flex items-center gap-1.5 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/60">
+                    <i class="fa-brands fa-github text-sm"></i>
+                    <span>GitHub 儲存庫</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full space-y-8">
+
+        <!-- Hero Section -->
+        <div class="text-center space-y-3 max-w-3xl mx-auto pt-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
+                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                互動式 Web 輔助計算分析工具
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                結構學與材料力學線上分析門戶
+            </h1>
+            <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+                提供即時應力轉換、視覺化繪圖與工程數學分析工具，協助結構與材料力學課業學習與工程計算。
+            </p>
+        </div>
+
+        <!-- Search & Category Controls -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+            <!-- Search Bar -->
+            <div class="relative w-full sm:w-80">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="search-input" placeholder="搜尋工具或關鍵字..." 
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto text-xs">
+                <button class="filter-btn active px-3 py-1.5 rounded-lg font-medium bg-indigo-600 text-white transition-colors" data-filter="all">全部工具</button>
+                <button class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors" data-filter="mechanics">材料力學</button>
+                <button class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors" data-filter="structures">結構學</button>
+                <button class="filter-btn px-3 py-1.5 rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors" data-filter="math">工程數學</button>
+            </div>
+        </div>
+
+        <!-- Tool Cards Grid -->
+        <div id="tools-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Card 1: Mohr's Circle Calculator (Active Tool) -->
+            <div class="tool-card glass-card rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden group" data-category="mechanics">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+                
+                <div class="space-y-4">
+                    <!-- Category Tag & Icon -->
+                    <div class="flex justify-between items-center">
+                        <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                            材料力學
+                        </span>
+                        <div class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-circle-notch text-lg"></i>
+                        </div>
+                    </div>
+
+                    <!-- Title & Description -->
+                    <div>
+                        <h2 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors flex items-center gap-2">
+                            莫爾圓與微小應力元素互動分析儀
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            支援拉逆為正座標系、極點 ($O.P.$) 動態幾何定位、主應力角 $\theta_p$ 與任意旋轉角 $\theta$ 的三方塊實體微小應力元素視覺化。
+                        </p>
+                    </div>
+
+                    <!-- Feature Bullets -->
+                    <ul class="text-[11px] text-slate-400 space-y-1.5 font-mono pt-1">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> HTML5 Canvas 動態動態繪圖</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> 極點 O.P. 及全座標點顯示</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> 包含三方塊實體應力元素箭頭</li>
+                    </ul>
+                </div>
+
+                <!-- Action Button -->
+                <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                    <span class="text-[11px] text-emerald-400 font-semibold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        已上線服務中
+                    </span>
+                    <a href="./mohr-circle/" class="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-all group-hover:translate-x-1">
+                        開啟計算器
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 2: Section Properties & Centroid (Coming Soon Placeholder) -->
+            <div class="tool-card glass-card rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 opacity-60 hover:opacity-100" data-category="structures">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            結構學 / 幾何
+                        </span>
+                        <div class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-amber-400">
+                            <i class="fa-solid fa-chart-area text-lg"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            二次/高次曲線面積與形心計算器
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            針對二次拋物線、三次曲線（上凹與上凸）等各類高次曲線區域，快速求解面積 $A$ 與形心座標 $(\bar{x}, \bar{y})$。
+                        </p>
+                    </div>
+
+                    <ul class="text-[11px] text-slate-500 space-y-1.5 font-mono pt-1">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-slate-500"></i> $y = h(x/b)^n$ 通用次數公式</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-slate-500"></i> 上凹 / 上凸（補角）區域切換</li>
+                    </ul>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                    <span class="text-[11px] text-slate-500 font-medium">規劃開發中...</span>
+                    <button disabled class="cursor-not-allowed text-xs font-semibold px-4 py-2 rounded-xl bg-slate-800 text-slate-500 border border-slate-700">
+                        敬請期待
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 3: Beam Deflection & Column Buckling ODEs (Coming Soon Placeholder) -->
+            <div class="tool-card glass-card rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 opacity-60 hover:opacity-100" data-category="math">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                            工程數學 / 撓度
+                        </span>
+                        <div class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-sky-400">
+                            <i class="fa-solid fa-wave-square text-lg"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            柱屈曲與微分方程 (ODE) 求解器
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                            針對二階線性常微分方程 $v'' + \frac{N}{EI}v = 0$，根據邊界條件求解歐拉屈曲臨界載重與撓度曲線 $v(x)$。
+                        </p>
+                    </div>
+
+                    <ul class="text-[11px] text-slate-500 space-y-1.5 font-mono pt-1">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-slate-500"></i> 特徵方程式特徵根即時解析</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-slate-500"></i> 多種柱支承條件撓度繪圖</li>
+                    </ul>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                    <span class="text-[11px] text-slate-500 font-medium">規劃開發中...</span>
+                    <button disabled class="cursor-not-allowed text-xs font-semibold px-4 py-2 rounded-xl bg-slate-800 text-slate-500 border border-slate-700">
+                        敬請期待
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900/60 border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div>&copy; 2026 結構與材料力學線上工具庫 Portal</div>
+            <div class="flex items-center space-x-4">
+                <span>單頁託管於 GitHub Pages</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Filter & Search JS Logic -->
+    <script>
+        const searchInput = document.getElementById('search-input');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const toolCards = document.querySelectorAll('.tool-card');
+
+        let currentFilter = 'all';
+
+        // Category Filter
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-indigo-600', 'text-white');
+                    b.classList.add('bg-slate-800', 'text-slate-400');
+                });
+                btn.classList.add('active', 'bg-indigo-600', 'text-white');
+                btn.classList.remove('bg-slate-800', 'text-slate-400');
+
+                currentFilter = btn.getAttribute('data-filter');
+                filterTools();
+            });
+        });
+
+        // Search Input Filter
+        searchInput.addEventListener('input', () => {
+            filterTools();
+        });
+
+        function filterTools() {
+            const query = searchInput.value.toLowerCase().trim();
+
+            toolCards.forEach(card => {
+                const category = card.getAttribute('data-category');
+                const title = card.querySelector('h2').textContent.toLowerCase();
+                const desc = card.querySelector('p').textContent.toLowerCase();
+
+                const matchesFilter = (currentFilter === 'all' || category === currentFilter);
+                const matchesSearch = title.includes(query) || desc.includes(query);
+
+                if (matchesFilter && matchesSearch) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
