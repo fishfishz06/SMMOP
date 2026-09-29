@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>組合斷面形心與慣性矩 (EI) 計算器 | Section Properties Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        roseBrand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            900: '#881337',
+                            950: '#4c0519',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(24, 15, 26, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(244, 63, 94, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900/80 border-b border-rose-900/30 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <a href="../" class="p-2 bg-slate-800 hover:bg-rose-950 text-rose-400 rounded-xl transition-colors flex items-center gap-2 border border-rose-900/40 text-xs font-semibold">
+                    <i class="fa-solid fa-arrow-left"></i> 返回目錄頁
+                </a>
+                <div>
+                    <span class="font-bold text-base sm:text-lg bg-gradient-to-r from-white via-rose-200 to-rose-400 bg-clip-text text-transparent">
+                        組合斷面形心與慣性矩分析儀
+                    </span>
+                    <span class="hidden sm:inline-block text-xs text-rose-400/80 ml-2 font-mono">Transformed EI Section</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3 text-xs font-mono text-slate-400">
+                <span class="px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                    <i class="fa-solid fa-shapes mr-1"></i> 多幾何幾何疊加
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Geometric Shape Inputs & Control Panel (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6">
+
+            <!-- Global Material Settings -->
+            <div class="glass-panel rounded-2xl p-5 space-y-4">
+                <h2 class="text-sm font-bold text-rose-300 flex items-center gap-2 border-b border-rose-900/30 pb-2">
+                    <i class="fa-solid fa-layer-group text-rose-500"></i> 全局參考材料與截面參數 (EI Transformed)
+                </h2>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">參考彈性模數 $E_{ref}$ (GPa 或 MPa)</label>
+                        <input type="number" id="e-ref" value="200" step="1" min="0.1" class="w-full bg-slate-900 border border-rose-900/40 rounded-xl px-3 py-2 text-rose-200 font-mono focus:outline-none focus:border-rose-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">剪力一次矩切面高度 $y_{cut}$</label>
+                        <input type="number" id="y-cut" value="10" step="1" class="w-full bg-slate-900 border border-rose-900/40 rounded-xl px-3 py-2 text-rose-200 font-mono focus:outline-none focus:border-rose-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shape List Manager -->
+            <div class="glass-panel rounded-2xl p-5 space-y-4">
+                <div class="flex justify-between items-center border-b border-rose-900/30 pb-2">
+                    <h2 class="text-sm font-bold text-rose-300 flex items-center gap-2">
+                        <i class="fa-solid fa-cubes-stacked text-rose-500"></i> 斷面組成元件列表
+                    </h2>
+                    <div class="flex gap-1.5">
+                        <button id="add-rect-btn" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition-all shadow-md shadow-rose-600/20">
+                            + 矩形
+                        </button>
+                        <button id="add-tri-btn" class="px-2.5 py-1 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700/50 text-xs font-medium transition-all">
+                            + 三角形
+                        </button>
+                        <button id="add-circle-btn" class="px-2.5 py-1 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700/50 text-xs font-medium transition-all">
+                            + 圓形/圓孔
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Shapes Container -->
+                <div id="shapes-list" class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                    <!-- Dynamic Rows Insertion Target -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Interactive Canvas & Calculated Results (7 Cols) -->
+        <div class="lg:col-span-7 space-y-6 flex flex-col justify-between">
+
+            <!-- Real-time Canvas Display -->
+            <div class="glass-panel rounded-2xl p-5 space-y-3 flex flex-col items-center justify-center">
+                <div class="w-full flex justify-between items-center text-xs text-slate-400">
+                    <span class="font-mono flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> 斷面實體 (繪圖區)
+                    </span>
+                    <span class="font-mono text-rose-400/80">
+                        <i class="fa-solid fa-crosshairs"></i> 形心 $\bar{y}$ 與 $y_{cut}$ 剪力線視覺化
+                    </span>
+                </div>
+
+                <div class="relative w-full aspect-[4/3] bg-slate-950 rounded-xl border border-rose-900/40 overflow-hidden flex items-center justify-center">
+                    <canvas id="sectionCanvas" class="w-full h-full cursor-crosshair"></canvas>
+                </div>
+            </div>
+
+            <!-- Calculated Mechanical Properties Output Table -->
+            <div class="glass-panel rounded-2xl p-5 space-y-4">
+                <h2 class="text-sm font-bold text-rose-300 border-b border-rose-900/30 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-rose-500"></i> 計算物理量分析結果 (Analytical Results)
+                </h2>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono text-xs">
+                    <!-- Total Area -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30">
+                        <div class="text-slate-400 text-[11px]">總幾何面積 $A$</div>
+                        <div id="res-A" class="text-rose-400 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                    <!-- Transformed Area -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30">
+                        <div class="text-slate-400 text-[11px]">轉換等效面積 $A_n$</div>
+                        <div id="res-An" class="text-rose-300 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                    <!-- Y Bar Centroid -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30">
+                        <div class="text-slate-400 text-[11px]">形心高度 $\bar{y}$</div>
+                        <div id="res-ybar" class="text-amber-400 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                    <!-- X Bar Centroid -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30">
+                        <div class="text-slate-400 text-[11px]">形心水平 $\bar{x}$</div>
+                        <div id="res-xbar" class="text-amber-400 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                    <!-- Moment of Inertia Ix -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30">
+                        <div class="text-slate-400 text-[11px]">形心軸慣性矩 $I_x$</div>
+                        <div id="res-Ix" class="text-rose-400 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                    <!-- Moment of Inertia Iy -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30">
+                        <div class="text-slate-400 text-[11px]">形心軸慣性矩 $I_y$</div>
+                        <div id="res-Iy" class="text-rose-400 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                    <!-- Equivalent EI -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30 col-span-2 sm:col-span-1">
+                        <div class="text-slate-400 text-[11px]">等效抗彎剛度 $EI_{eff}$</div>
+                        <div id="res-EI" class="text-emerald-400 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                    <!-- First Moment Q -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-rose-900/30 col-span-2 sm:col-span-2">
+                        <div class="text-slate-400 text-[11px]">剪力一次矩 $Q_x$ (在 $y \ge y_{cut}$ 區域)</div>
+                        <div id="res-Qx" class="text-sky-400 font-bold text-sm mt-1">0.00</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900/60 border-t border-rose-900/30 py-4 text-center text-xs text-slate-500 font-mono">
+        &copy; 2026 SMMOP Transformed EI Section Calculator
+    </footer>
+
+    <!-- Script Section: Shape Logic & Mechanical Formula Engine -->
+    <script>
+        // Initial Default Shapes Data
+        let shapes = [
+            { id: 1, type: 'rect', typeName: '矩形基座', isCut: false, E: 200, b: 20, h: 5, xc: 0, yc: 2.5 },
+            { id: 2, type: 'rect', typeName: '腹板 (Web)', isCut: false, E: 200, b: 4, h: 20, xc: 0, yc: 15 },
+            { id: 3, type: 'circle', typeName: '圓形穿孔', isCut: true, E: 200, r: 3, xc: 0, yc: 15 }
+        ];
+
+        const shapesListEl = document.getElementById('shapes-list');
+        const canvas = document.getElementById('sectionCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Form Inputs Listener
+        document.getElementById('e-ref').addEventListener('input', calculateAndRender);
+        document.getElementById('y-cut').addEventListener('input', calculateAndRender);
+
+        document.getElementById('add-rect-btn').addEventListener('click', () => {
+            shapes.push({ id: Date.now(), type: 'rect', typeName: '新增矩形', isCut: false, E: 200, b: 10, h: 10, xc: 0, yc: 10 });
+            renderShapeInputs();
+            calculateAndRender();
+        });
+
+        document.getElementById('add-tri-btn').addEventListener('click', () => {
+            shapes.push({ id: Date.now(), type: 'tri', typeName: '新增三角形', isCut: false, E: 200, b: 10, h: 10, xc: 0, yc: 10 });
+            renderShapeInputs();
+            calculateAndRender();
+        });
+
+        document.getElementById('add-circle-btn').addEventListener('click', () => {
+            shapes.push({ id: Date.now(), type: 'circle', typeName: '新增圓形', isCut: false, E: 200, r: 5, xc: 0, yc: 10 });
+            renderShapeInputs();
+            calculateAndRender();
+        });
+
+        // Dynamic Shapes Input UI Generator
+        function renderShapeInputs() {
+            shapesListEl.innerHTML = '';
+            shapes.forEach((s, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/90 border border-rose-900/30 rounded-xl p-3 space-y-2 text-xs relative";
+                
+                let dimInputs = '';
+                if (s.type === 'rect') {
+                    dimInputs = `
+                        <div><label class="text-[10px] text-slate-400">寬 b</label><input type="number" step="0.5" value="${s.b}" data-id="${s.id}" data-prop="b" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200"></div>
+                        <div><label class="text-[10px] text-slate-400">高 h</label><input type="number" step="0.5" value="${s.h}" data-id="${s.id}" data-prop="h" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200"></div>
+                    `;
+                } else if (s.type === 'tri') {
+                    dimInputs = `
+                        <div><label class="text-[10px] text-slate-400">底 b</label><input type="number" step="0.5" value="${s.b}" data-id="${s.id}" data-prop="b" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200"></div>
+                        <div><label class="text-[10px] text-slate-400">高 h</label><input type="number" step="0.5" value="${s.h}" data-id="${s.id}" data-prop="h" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200"></div>
+                    `;
+                } else if (s.type === 'circle') {
+                    dimInputs = `
+                        <div class="col-span-2"><label class="text-[10px] text-slate-400">半徑 r</label><input type="number" step="0.5" value="${s.r}" data-id="${s.id}" data-prop="r" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200"></div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-rose-300">#${idx+1} ${s.typeName}</span>
+                        <div class="flex items-center gap-2">
+                            <label class="text-[10px] text-rose-400/80 flex items-center gap-1 cursor-pointer">
+                                <input type="checkbox" ${s.isCut ? 'checked' : ''} data-id="${s.id}" data-prop="isCut" class="shape-check rounded bg-slate-950"> 挖空/扣除
+                            </label>
+                            <button data-id="${s.id}" class="remove-btn text-slate-500 hover:text-rose-400 transition-colors"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        ${dimInputs}
+                        <div><label class="text-[10px] text-slate-400">形心 Xc</label><input type="number" step="0.5" value="${s.xc}" data-id="${s.id}" data-prop="xc" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200"></div>
+                        <div><label class="text-[10px] text-slate-400">形心 Yc</label><input type="number" step="0.5" value="${s.yc}" data-id="${s.id}" data-prop="yc" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200"></div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400">材料彈性模數 $E$</label>
+                        <input type="number" step="10" value="${s.E}" data-id="${s.id}" data-prop="E" class="shape-input w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-rose-300 font-mono">
+                    </div>
+                `;
+                shapesListEl.appendChild(card);
+            });
+
+            // Bind Input Listeners
+            document.querySelectorAll('.shape-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const id = parseFloat(e.target.dataset.id);
+                    const prop = e.target.dataset.prop;
+                    const val = parseFloat(e.target.value) || 0;
+                    const shape = shapes.find(s => s.id === id);
+                    if (shape) { shape[prop] = val; calculateAndRender(); }
+                });
+            });
+
+            document.querySelectorAll('.shape-check').forEach(chk => {
+                chk.addEventListener('change', (e) => {
+                    const id = parseFloat(e.target.dataset.id);
+                    const shape = shapes.find(s => s.id === id);
+                    if (shape) { shape.isCut = e.target.checked; calculateAndRender(); }
+                });
+            });
+
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseFloat(btn.dataset.id);
+                    shapes = shapes.filter(s => s.id !== id);
+                    renderShapeInputs();
+                    calculateAndRender();
+                });
+            });
+        }
+
+        // Calculation & Canvas Rendering Engine
+        function calculateAndRender() {
+            const E_ref = parseFloat(document.getElementById('e-ref').value) || 200;
+            const y_cut = parseFloat(document.getElementById('y-cut').value) || 0;
+
+            let totalA = 0;
+            let totalAn = 0;
+            let sumAnXc = 0;
+            let sumAnYc = 0;
+
+            // Step 1: Centroid Calculation
+            shapes.forEach(s => {
+                let A = 0;
+                if (s.type === 'rect') A = s.b * s.h;
+                else if (s.type === 'tri') A = 0.5 * s.b * s.h;
+                else if (s.type === 'circle') A = Math.PI * s.r * s.r;
+
+                if (s.isCut) A = -Math.abs(A);
+
+                const n = s.E / E_ref;
+                const An = A * n;
+
+                s.calcA = A;
+                s.calcAn = An;
+
+                totalA += A;
+                totalAn += An;
+                sumAnXc += An * s.xc;
+                sumAnYc += An * s.yc;
+            });
+
+            const xbar = totalAn !== 0 ? sumAnXc / totalAn : 0;
+            const ybar = totalAn !== 0 ? sumAnYc / totalAn : 0;
+
+            // Step 2: Moment of Inertia (Parallel Axis Theorem)
+            let totalIx = 0;
+            let totalIy = 0;
+            let totalQx = 0;
+
+            shapes.forEach(s => {
+                let Ixc = 0;
+                let Iyc = 0;
+
+                if (s.type === 'rect') {
+                    Ixc = (s.b * Math.pow(s.h, 3)) / 12;
+                    Iyc = (s.h * Math.pow(s.b, 3)) / 12;
+                } else if (s.type === 'tri') {
+                    Ixc = (s.b * Math.pow(s.h, 3)) / 36;
+                    Iyc = (s.h * Math.pow(s.b, 3)) / 36;
+                } else if (s.type === 'circle') {
+                    Ixc = (Math.PI * Math.pow(s.r, 4)) / 4;
+                    Iyc = (Math.PI * Math.pow(s.r, 4)) / 4;
+                }
+
+                const sign = s.isCut ? -1 : 1;
+                const n = s.E / E_ref;
+
+                const Ix = n * sign * (Ixc + Math.abs(s.calcA) * Math.pow(s.yc - ybar, 2));
+                const Iy = n * sign * (Iyc + Math.abs(s.calcA) * Math.pow(s.xc - xbar, 2));
+
+                totalIx += Ix;
+                totalIy += Iy;
+
+                // Approximate Qx calculation above y_cut
+                if (s.yc + (s.h || s.r || 0) >= y_cut && !s.isCut) {
+                    const dy = s.yc - ybar;
+                    if (dy > 0) {
+                        totalQx += n * Math.abs(s.calcA) * Math.abs(s.yc - ybar);
+                    }
+                }
+            });
+
+            const EI_eff = E_ref * totalIx;
+
+            // Update UI Numerical Output
+            document.getElementById('res-A').textContent = totalA.toFixed(2);
+            document.getElementById('res-An').textContent = totalAn.toFixed(2);
+            document.getElementById('res-xbar').textContent = xbar.toFixed(2);
+            document.getElementById('res-ybar').textContent = ybar.toFixed(2);
+            document.getElementById('res-Ix').textContent = totalIx.toFixed(2);
+            document.getElementById('res-Iy').textContent = totalIy.toFixed(2);
+            document.getElementById('res-EI').textContent = EI_eff.toExponential(2);
+            document.getElementById('res-Qx').textContent = totalQx.toFixed(2);
+
+            // Render Canvas
+            drawSectionCanvas(xbar, ybar, y_cut);
+        }
+
+        // Canvas Graphic Drawing Function
+        function drawSectionCanvas(xbar, ybar, y_cut) {
+            const rect = canvas.parentNode.getBoundingClientRect();
+            canvas.width = rect.width * 2;
+            canvas.height = rect.height * 2;
+            ctx.scale(2, 2);
+
+            const w = rect.width;
+            const h = rect.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Origin / Grid Scale Mapping
+            const scale = 8; 
+            const offsetX = w / 2;
+            const offsetY = h * 0.8;
+
+            const toCanvasX = (x) => offsetX + x * scale;
+            const toCanvasY = (y) => offsetY - y * scale;
+
+            // Axis Lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, offsetY); ctx.lineTo(w, offsetY);
+            ctx.moveTo(offsetX, 0); ctx.lineTo(offsetX, h);
+            ctx.stroke();
+
+            // Draw Shapes
+            shapes.forEach(s => {
+                ctx.beginPath();
+                if (s.type === 'rect') {
+                    const left = toCanvasX(s.xc - s.b / 2);
+                    const top = toCanvasY(s.yc + s.h / 2);
+                    const rw = s.b * scale;
+                    const rh = s.h * scale;
+
+                    if (s.isCut) {
+                        ctx.fillStyle = '#0f172a';
+                        ctx.strokeStyle = '#f43f5e';
+                        ctx.setLineDash([4, 4]);
+                        ctx.fillRect(left, top, rw, rh);
+                        ctx.strokeRect(left, top, rw, rh);
+                        ctx.setLineDash([]);
+                    } else {
+                        ctx.fillStyle = 'rgba(225, 29, 72, 0.3)';
+                        ctx.strokeStyle = '#e11d48';
+                        ctx.fillRect(left, top, rw, rh);
+                        ctx.strokeRect(left, top, rw, rh);
+                    }
+                } else if (s.type === 'circle') {
+                    const cx = toCanvasX(s.xc);
+                    const cy = toCanvasY(s.yc);
+                    const cr = s.r * scale;
+
+                    ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+                    if (s.isCut) {
+                        ctx.fillStyle = '#0f172a';
+                        ctx.strokeStyle = '#f43f5e';
+                        ctx.setLineDash([4, 4]);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    } else {
+                        ctx.fillStyle = 'rgba(225, 29, 72, 0.3)';
+                        ctx.strokeStyle = '#e11d48';
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                } else if (s.type === 'tri') {
+                    const x1 = toCanvasX(s.xc - s.b / 2);
+                    const y1 = toCanvasY(s.yc - s.h / 3);
+                    const x2 = toCanvasX(s.xc + s.b / 2);
+                    const y2 = toCanvasY(s.yc - s.h / 3);
+                    const x3 = toCanvasX(s.xc);
+                    const y3 = toCanvasY(s.yc + (2 * s.h) / 3);
+
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.lineTo(x3, y3);
+                    ctx.closePath();
+
+                    if (s.isCut) {
+                        ctx.fillStyle = '#0f172a';
+                        ctx.strokeStyle = '#f43f5e';
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = 'rgba(225, 29, 72, 0.3)';
+                        ctx.strokeStyle = '#e11d48';
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            // Draw Centroid Crosshair (Amber)
+            const cx = toCanvasX(xbar);
+            const cy = toCanvasY(ybar);
+
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cx - 15, cy); ctx.lineTo(cx + 15, cy);
+            ctx.moveTo(cx, cy - 15); ctx.lineTo(cx, cy + 15);
+            ctx.stroke();
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText(`Centroid (${xbar.toFixed(1)}, ${ybar.toFixed(1)})`, cx + 8, cy - 8);
+
+            // Draw Y_cut Line (Sky Blue)
+            const cutY = toCanvasY(y_cut);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(0, cutY); ctx.lineTo(w, cutY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillText(`y_cut = ${y_cut}`, 10, cutY - 5);
+        }
+
+        // Initialize Page
+        renderShapeInputs();
+        calculateAndRender();
+        window.addEventListener('resize', calculateAndRender);
+    </script>
+</body>
+</html>
